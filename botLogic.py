@@ -267,8 +267,8 @@ def boardMapper(board, playerFunc, playerCompFunc, opponentFunc, opponentCompFun
 
             choice, opponentVal = opponentFunc(newBoard, 0, False, 1, None, 0, 0, True)
             
-            print("Opponent score: ", opponentVal)
-            print("Before: ", utilBoard)
+            # print("Opponent score: ", opponentVal)
+            # print("Before: ", utilBoard)
 
             # When the 3x3 region is filled
             if choice == None:
@@ -287,20 +287,20 @@ def boardMapper(board, playerFunc, playerCompFunc, opponentFunc, opponentCompFun
                     else:
                         utilBoard[set_i][set_j] = opponentVal
             
-            print("After", utilBoard)
+            # print("After", utilBoard)
 
     for i in range(len(board) - 2):
         for j in range(len(board) - 2):
             newBoard = [board[i + offset][j:j+3] for offset in range(3)]
-            print("New board")
-            print(newBoard)
+            # print("New board")
+            # print(newBoard)
             playerFunc(newBoard, 0, False, 1, utilBoard, i, j)
 
-            print("Util Board")
-            print(utilBoard)
+            # print("Util Board")
+            # print(utilBoard)
     
-    print("Util Board")
-    print(utilBoard)
+    # print("Util Board")
+    # print(utilBoard)
     
     # Find the best choice
     chosenChoice = (-1, -1)
@@ -439,4 +439,4 @@ def test():
         
         printBoard(board)
 
-        
+test()
