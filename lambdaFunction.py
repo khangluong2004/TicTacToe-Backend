@@ -1,4 +1,5 @@
 import json
+from botLogic import minimax, unmaskBoard
 
 def lambda_handler(event, context):
     # TODO implement
@@ -7,8 +8,12 @@ def lambda_handler(event, context):
     
     # Test echoing the input
     requestBody = json.loads(event["body"])
+
+    # Find the next optimal choice
+    receivedBoard = unmaskBoard(requestBody["numX"], requestBody["numO"])
+    nextMove = minimax(receivedBoard, requestBody["isX"])
     
     return {
         'statusCode': 200,
-        'body': json.dumps((requestBody["numX"], requestBody["numO"]))
+        'body': json.dumps(nextMove)
     }

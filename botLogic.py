@@ -235,6 +235,9 @@ def calcWeightedUtil(val, level):
 
 # Create a global memoization cache for the next move and utility value
 # in the 3x3 region
+
+# TODO: Add isX into the cache, since can't derive the turn from the board
+
 # Format: (numberX, numberO) -> Choice, Val
 # cacheNextMove = {}
 
@@ -396,7 +399,7 @@ def playerTemplate(board, curOptimal, isOptimalSet, level,
     # cacheNextMove[(numberX, numberO)] = (optimalChoice, optimalVal)
 
     # If top level, then add the utilBoard
-    # if level == 1:
+    # if utilBoard != None and level == 1:
     #     cacheUtilBoard[(numberX, numberO)] = [utilBoard[newX][startY: startY + 3] for newX in range(startX, startX + 3)]
 
     # Check if top level, then also cache
@@ -439,4 +442,12 @@ def test():
         
         printBoard(board)
 
-test()
+        stop = input("Stop?")
+        if stop == "Y":
+            break
+    
+    # with open("cacheNextMove.py", "w") as cacheNextFile:
+    #     cacheNextFile.write("cacheNextMove = " + str(cacheNextMove))
+    
+    # with open("cacheUtilBoard.py", "w") as cachedUtilBoardFile:
+    #     cachedUtilBoardFile.write("cacheUtilBoard = " + str(cacheUtilBoard))
