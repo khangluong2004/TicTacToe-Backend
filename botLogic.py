@@ -4,6 +4,7 @@ Tic Tac Toe Player
 
 import math
 import copy
+import time
 
 X = "X"
 O = "O"
@@ -217,9 +218,9 @@ def minimax(board, isX):
 
     choice = (-1, -1)
     if isX:
-        choice = boardMapper(board, maxPlayer, compareMax)
+        choice = boardMapper(board, maxPlayer, compareMax, minPlayer, compareMin)
     else:
-        choice = boardMapper(board, minPlayer, compareMin)
+        choice = boardMapper(board, minPlayer, compareMin, maxPlayer, compareMax)
 
     return choice
 
@@ -234,15 +235,60 @@ def calcWeightedUtil(val, level):
     """
     Helper function to find the weighted utility
     """
-    return val * (9 - level)
+    return val * (3 ** (9 - level))
 
 # TODO: Factor in the util of not moving
-def boardMapper(board, playerFunc, compareFunc):
+def boardMapper(board, playerFunc, playerCompFunc, opponentFunc, opponentCompFunc):
     """
     Map 4 3x3 squares into 1 4x4 board, and pick out the best move
     """  
 
     utilBoard = initial_state()
+
+    # Initialize the "empty" states of the board, since some
+    # of the 3x3 might not be affected by a move, thus the cost
+    # of not moving should be included
+
+    for i in range(len(board) - 2):
+        for j in range(len(board) - 2):
+            newBoard = [board[i + offset][j:j+3] for offset in range(3)]
+            empUtilBoard = [[EMPTY] * 3 for i in range(3)]
+            opponentFunc(newBoard, 0, False, 1, empUtilBoard, 0, 0)
+            opponentVal = None
+
+            for row in empUtilBoard:
+                for utilVal in row:
+                    if utilVal == None:
+                        continue
+
+                    if opponentVal == None:
+                        opponentVal = utilVal
+                        continue
+
+                    if opponentCompFunc(utilVal, opponentVal):
+                        opponentVal = utilVal
+            
+            print("Opponent score: ", opponentVal)
+            print("Before: ", utilBoard)
+
+            # When the 3x3 region is filled
+            if opponentVal == None:
+                continue            
+
+            # Set all cells outside the square to the potential
+            # opponent values if left this square unmoved
+            for set_i in range(len(board)):
+                for set_j in range(len(board)):
+                    if (i <= set_i and set_i <= i + 2
+                        and j <= set_j and set_j <= j + 2):
+                        continue
+                    
+                    if utilBoard[set_i][set_j] != None:
+                        utilBoard[set_i][set_j] += opponentVal
+                    else:
+                        utilBoard[set_i][set_j] = opponentVal
+            
+            print("After", utilBoard)
 
     for i in range(len(board) - 2):
         for j in range(len(board) - 2):
@@ -268,21 +314,32 @@ def boardMapper(board, playerFunc, compareFunc):
             compareVal = utilBoard[i][j]
             chosenChoice = (i, j)
 
-        elif compareFunc(utilBoard[i][j], compareVal):
+        elif playerCompFunc(utilBoard[i][j], compareVal):
             compareVal = utilBoard[i][j]
             chosenChoice = (i, j)
     
     return chosenChoice
 
+def updateUtilBoard(utilBoard, startX, startY, val, action):
+    if utilBoard == None:
+        return
+    
+    adjustX = startX + action[0]
+    adjustY = startY + action[1]
+    if utilBoard[adjustX][adjustY] == None:
+        utilBoard[adjustX][adjustY] = val
+    else:
+        utilBoard[adjustX][adjustY] += val
 
-def maxPlayer(board, curMin, isMinSet, level, utilBoard, startX, startY) -> tuple:
+
+def maxPlayer(board, curMin, isMinSet, level, utilBoard = None, startX = -1, startY = -1) -> tuple:
     """
     Returns the choice of max player X, along with the utility
     """
 
     # Base case
     if terminal(board):
-        return (None, utility(board))
+        return (None, calcWeightedUtil(utility(board), level))
     
     # Check cache
     # numberX, numberO = bitmaskBoard(board)
@@ -297,16 +354,9 @@ def maxPlayer(board, curMin, isMinSet, level, utilBoard, startX, startY) -> tupl
     for action in allowedActions:
         newBoard = result(board, action, True)
         if maxChoice == None:
-            _, maxVal = minPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY)
+            _, newVal = minPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY)
+            maxVal = newVal
             maxChoice = action
-
-            if level == 1:
-                adjustX = startX + action[0]
-                adjustY = startY + action[1]
-                if utilBoard[adjustX][adjustY] == None:
-                    utilBoard[adjustX][adjustY] = calcWeightedUtil(maxVal, level)
-                else:
-                    utilBoard[adjustX][adjustY] += calcWeightedUtil(maxVal, level)
 
         else:
             _, newVal = minPlayer(newBoard, maxVal, True, level + 1, utilBoard, startX, startY)
@@ -314,20 +364,15 @@ def maxPlayer(board, curMin, isMinSet, level, utilBoard, startX, startY) -> tupl
                 maxVal = newVal
                 maxChoice = action
             
-            if level == 1:
-                adjustX = startX + action[0]
-                adjustY = startY + action[1]
-                if utilBoard[adjustX][adjustY] == None:
-                    utilBoard[adjustX][adjustY] = calcWeightedUtil(newVal, level)
-                else:
-                    utilBoard[adjustX][adjustY] += calcWeightedUtil(newVal, level)
+        if level == 1:
+            updateUtilBoard(utilBoard, startX, startY, newVal, action)
             
         # Alpha-beta prunning
         # If the minVal is set, and the current maxVal is smaller than
         # previous minVal, then return to break out, since it's irrelevant
         # anyway
-        if (isMinSet and maxVal >= curMin):
-            return (maxChoice, maxVal)
+        # if (isMinSet and maxVal >= curMin):
+        #     return (maxChoice, maxVal)
 
     # Add to cache
     # cache[(numberX, numberO)] = (maxChoice, maxVal)
@@ -342,7 +387,7 @@ def minPlayer(board, curMax, isMaxSet, level, utilBoard, startX, startY) -> tupl
 
     # Base case
     if terminal(board):
-        return (None, utility(board))
+        return (None, calcWeightedUtil(utility(board), level))
     
     # Check cache
     # numberX, numberO = bitmaskBoard(board)
@@ -357,16 +402,9 @@ def minPlayer(board, curMax, isMaxSet, level, utilBoard, startX, startY) -> tupl
     for action in allowedActions:
         newBoard = result(board, action, False)
         if minChoice == None:
-            _, minVal = maxPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY)
+            _, newVal = maxPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY)
+            minVal = newVal
             minChoice = action
-
-            if level == 1:
-                adjustX = startX + action[0]
-                adjustY = startY + action[1]
-                if utilBoard[adjustX][adjustY] == None:
-                    utilBoard[adjustX][adjustY] = calcWeightedUtil(minVal, level)
-                else:
-                    utilBoard[adjustX][adjustY] += calcWeightedUtil(minVal, level)
 
         else:
             _, newVal = maxPlayer(newBoard, minVal, True, level + 1, utilBoard, startX, startY)
@@ -374,21 +412,16 @@ def minPlayer(board, curMax, isMaxSet, level, utilBoard, startX, startY) -> tupl
                 minVal = newVal
                 minChoice = action
 
-            if level == 1:
-                adjustX = startX + action[0]
-                adjustY = startY + action[1]
-                if utilBoard[adjustX][adjustY] == None:
-                    utilBoard[adjustX][adjustY] = calcWeightedUtil(newVal, level)
-                else:
-                    utilBoard[adjustX][adjustY] += calcWeightedUtil(newVal, level)
+        if level == 1:
+            updateUtilBoard(utilBoard, startX, startY, newVal, action)
         
         # Alpha-beta prunnning
         # If the maxVal is set, and the minVal is lower than curMax, 
         # then this search is irrelevant (as the maxPlayer would choose the 
         # curMax previously), so return to break out
         
-        if (isMaxSet and minVal <= curMax):
-            return (minChoice, minVal)
+        # if (isMaxSet and minVal <= curMax):
+        #     return (minChoice, minVal)
     
     # Add cache
     # cache[(numberX, numberO)] = (minChoice, minVal)
@@ -407,8 +440,11 @@ def test():
     board = initial_state()
     for i in range(16):
         if i % 2 == 1:
+            beforeTime = time.time()
             choice = minimax(board, False)
             board = result(board, choice, False)
+            afterTime = time.time()
+            print(f"Taken: {afterTime - beforeTime}s")
         else:
             x_loc = int(input("X location: "))
             y_loc = int(input("Y location: "))
