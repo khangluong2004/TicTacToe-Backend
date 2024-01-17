@@ -253,7 +253,7 @@ def boardMapper(board, playerFunc, playerCompFunc, opponentFunc, opponentCompFun
         for j in range(len(board) - 2):
             newBoard = [board[i + offset][j:j+3] for offset in range(3)]
             empUtilBoard = [[EMPTY] * 3 for i in range(3)]
-            opponentFunc(newBoard, 0, False, 1, empUtilBoard, 0, 0)
+            opponentFunc(newBoard, 0, False, 1, empUtilBoard, 0, 0, True)
             opponentVal = None
 
             for row in empUtilBoard:
@@ -332,7 +332,7 @@ def updateUtilBoard(utilBoard, startX, startY, val, action):
         utilBoard[adjustX][adjustY] += val
 
 
-def maxPlayer(board, curMin, isMinSet, level, utilBoard = None, startX = -1, startY = -1) -> tuple:
+def maxPlayer(board, curMin, isMinSet, level, utilBoard = None, startX = -1, startY = -1, isPrunable = False) -> tuple:
     """
     Returns the choice of max player X, along with the utility
     """
@@ -354,12 +354,12 @@ def maxPlayer(board, curMin, isMinSet, level, utilBoard = None, startX = -1, sta
     for action in allowedActions:
         newBoard = result(board, action, True)
         if maxChoice == None:
-            _, newVal = minPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY)
+            _, newVal = minPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY, isPrunable)
             maxVal = newVal
             maxChoice = action
 
         else:
-            _, newVal = minPlayer(newBoard, maxVal, True, level + 1, utilBoard, startX, startY)
+            _, newVal = minPlayer(newBoard, maxVal, True, level + 1, utilBoard, startX, startY, isPrunable)
             if (newVal > maxVal):
                 maxVal = newVal
                 maxChoice = action
@@ -371,8 +371,8 @@ def maxPlayer(board, curMin, isMinSet, level, utilBoard = None, startX = -1, sta
         # If the minVal is set, and the current maxVal is smaller than
         # previous minVal, then return to break out, since it's irrelevant
         # anyway
-        # if (isMinSet and maxVal >= curMin):
-        #     return (maxChoice, maxVal)
+        if (isPrunable and isMinSet and maxVal >= curMin):
+            return (maxChoice, maxVal)
 
     # Add to cache
     # cache[(numberX, numberO)] = (maxChoice, maxVal)
@@ -380,7 +380,7 @@ def maxPlayer(board, curMin, isMinSet, level, utilBoard = None, startX = -1, sta
     return (maxChoice, maxVal)
 
 
-def minPlayer(board, curMax, isMaxSet, level, utilBoard, startX, startY) -> tuple:
+def minPlayer(board, curMax, isMaxSet, level, utilBoard = None, startX = -1, startY = -1, isPrunable = False) -> tuple:
     """
     Returns the choice of min player O, along with the utility
     """
@@ -402,12 +402,12 @@ def minPlayer(board, curMax, isMaxSet, level, utilBoard, startX, startY) -> tupl
     for action in allowedActions:
         newBoard = result(board, action, False)
         if minChoice == None:
-            _, newVal = maxPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY)
+            _, newVal = maxPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY, isPrunable)
             minVal = newVal
             minChoice = action
 
         else:
-            _, newVal = maxPlayer(newBoard, minVal, True, level + 1, utilBoard, startX, startY)
+            _, newVal = maxPlayer(newBoard, minVal, True, level + 1, utilBoard, startX, startY, isPrunable)
             if (newVal < minVal):
                 minVal = newVal
                 minChoice = action
@@ -420,8 +420,8 @@ def minPlayer(board, curMax, isMaxSet, level, utilBoard, startX, startY) -> tupl
         # then this search is irrelevant (as the maxPlayer would choose the 
         # curMax previously), so return to break out
         
-        # if (isMaxSet and minVal <= curMax):
-        #     return (minChoice, minVal)
+        if (isPrunable and isMaxSet and minVal <= curMax):
+            return (minChoice, minVal)
     
     # Add cache
     # cache[(numberX, numberO)] = (minChoice, minVal)
