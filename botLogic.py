@@ -413,113 +413,7 @@ def minPlayer(board, curMax, isMaxSet, level, utilBoard = None, startX = -1, sta
                           playerCompFunc=compareMin, opponentFunc=maxPlayer, isMax=False,
                           utilBoard=utilBoard, startX=startX, startY=startY, isPrunable=isPrunable)
 
-# def maxPlayer(board, curMin, isMinSet, level, utilBoard = None, startX = -1, startY = -1, isPrunable = False) -> tuple:
-#     """
-#     Returns the choice of max player X, along with the utility
-#     """
 
-#     # Base case
-#     if terminal(board):
-#         return (None, calcWeightedUtil(utility(board), level))
-    
-#     # Check cache
-#     # numberX, numberO = bitmaskBoard(board)
-#     # if level == 1:
-#     #     if (numberX, numberO) in cacheUtilBoard:
-#     #         copyUtilBoard(utilBoard, cacheUtilBoard[(numberX, numberO)])
-#     #         return cacheNextMove[(numberX, numberO)]
-#     # else:
-#     #     if (numberX, numberO) in cacheNextMove:
-#     #         return cacheNextMove[((numberX, numberO))]
-
-#     # Recursive case    
-#     maxVal = -1
-#     maxChoice = None
-#     allowedActions = actions(board)
-
-#     # Allow pruning if not top 2 levels, since no need for accurate utility of all points
-#     if level > 2 and not isPrunable:
-#         isPrunable = True
-
-#     for action in allowedActions:
-#         newBoard = result(board, action, True)
-#         if maxChoice == None:
-#             _, newVal = minPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY, True)
-#             maxVal = newVal
-#             maxChoice = action
-
-#         else:
-#             # Stop pruning to get the actual correct utility
-#             _, newVal = minPlayer(newBoard, maxVal, True, level + 1, utilBoard, startX, startY, isPrunable)
-#             if (newVal > maxVal):
-#                 maxVal = newVal
-#                 maxChoice = action
-            
-#         if level == 1:
-#             updateUtilBoard(utilBoard, startX, startY, newVal, action)
-            
-#         # Alpha-beta prunning
-#         # If the minVal is set, and the current maxVal is smaller than
-#         # previous minVal, then return to break out, since it's irrelevant
-#         # anyway
-#         if (isPrunable and isMinSet and maxVal >= curMin):
-#             return (maxChoice, maxVal)
-
-#     # Add to cache
-#     # cacheNextMove[(numberX, numberO)] = (maxChoice, maxVal)
-
-#     # Check if top level, then also cache
-    
-#     return (maxChoice, maxVal)
-
-
-# def minPlayer(board, curMax, isMaxSet, level, utilBoard = None, startX = -1, startY = -1, isPrunable = False) -> tuple:
-#     """
-#     Returns the choice of min player O, along with the utility
-#     """
-
-#     # Base case
-#     if terminal(board):
-#         return (None, calcWeightedUtil(utility(board), level))
-    
-#     # Check cache
-#     # numberX, numberO = bitmaskBoard(board)
-#     # if (numberX, numberO) in cache:
-#     #     return cache[(numberX, numberO)]
-    
-#     # Recursive case
-#     minVal = 1
-#     minChoice = None
-#     allowedActions = actions(board)
-
-#     for action in allowedActions:
-#         newBoard = result(board, action, False)
-#         if minChoice == None:
-#             _, newVal = maxPlayer(newBoard, -1, False, level + 1, utilBoard, startX, startY, True)
-#             minVal = newVal
-#             minChoice = action
-
-#         else:
-#             _, newVal = maxPlayer(newBoard, minVal, True, level + 1, utilBoard, startX, startY, isPrunable)
-#             if (newVal < minVal):
-#                 minVal = newVal
-#                 minChoice = action
-
-#         if level == 1:
-#             updateUtilBoard(utilBoard, startX, startY, newVal, action)
-        
-#         # Alpha-beta prunnning
-#         # If the maxVal is set, and the minVal is lower than curMax, 
-#         # then this search is irrelevant (as the maxPlayer would choose the 
-#         # curMax previously), so return to break out
-        
-#         if (isPrunable and isMaxSet and minVal <= curMax):
-#             return (minChoice, minVal)
-    
-#     # Add cache
-#     # cache[(numberX, numberO)] = (minChoice, minVal)
-    
-#     return (minChoice, minVal)
 
 
 
@@ -545,5 +439,4 @@ def test():
         
         printBoard(board)
 
-test()
         
