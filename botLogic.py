@@ -226,17 +226,25 @@ def compareMax(a, b):
 def compareMin(a, b):
     return a < b
 
-def calcWeightedUtil(val, level):
+def calcWeightedUtil(val, level, isOpponent):
     """
     Helper function to find the weighted utility
     """
+
+    # Deal with 1 step to victory, prioritize that step then
+    # isOpponent is set, because the terminal condition is checked by the 
+    # next player (with the minimax recursion), instead of the current player
+    # who plays the move
+    if level <= 2 and isOpponent:
+        return val * (3 ** 11)
+
     return val * (3 ** (9 - level))
 
 
 # Create a global memoization cache for the next move and utility value
 # in the 3x3 region
 
-# TODO: Add isX into the cache, since can't derive the turn from the board
+# If cache needed, TODO: Add isX into the cache, since can't derive the turn from the board
 
 # Format: (numberX, numberO) -> Choice, Val
 # cacheNextMove = {}
@@ -259,8 +267,9 @@ def boardMapper(board, playerFunc, playerCompFunc, opponentFunc, opponentCompFun
     for i in range(len(board) - 2):
         for j in range(len(board) - 2):
             newBoard = [board[i + offset][j:j+3] for offset in range(3)]
-            numberX, numberO = bitmaskBoard(newBoard)
 
+            # CACHE:
+            # numberX, numberO = bitmaskBoard(newBoard)
             # if (numberX, numberO) in  cacheNextMove:
             #     choice, opponentVal = cacheNextMove[(numberX, numberO)]
             # else:
@@ -268,7 +277,8 @@ def boardMapper(board, playerFunc, playerCompFunc, opponentFunc, opponentCompFun
             #     # Add cache
             #     cacheNextMove[(numberX, numberO)] = (choice, opponentVal)
 
-            choice, opponentVal = opponentFunc(newBoard, 0, False, 1, None, 0, 0, True)
+
+            choice, opponentVal = opponentFunc(newBoard, 0, False, 1, None, 0, 0, True, True)
             
             # print("Opponent score: ", opponentVal)
             # print("Before: ", utilBoard)
@@ -297,7 +307,7 @@ def boardMapper(board, playerFunc, playerCompFunc, opponentFunc, opponentCompFun
             newBoard = [board[i + offset][j:j+3] for offset in range(3)]
             # print("New board")
             # print(newBoard)
-            playerFunc(newBoard, 0, False, 1, utilBoard, i, j)
+            playerFunc(newBoard, 0, False, 1, utilBoard, i, j, False, False)
 
             # print("Util Board")
             # print(utilBoard)
@@ -340,7 +350,7 @@ def copyUtilBoard(curUtilBoard, cachedUtilBoard, startX, startY):
 
 
 def playerTemplate(board, curOptimal, isOptimalSet, level, 
-                   playerCompFunc, opponentFunc, isMax,
+                   playerCompFunc, opponentFunc, isMax, isOpponent,
                    utilBoard = None, startX = -1, startY = -1, isPrunable = False):
     """
     Template for both max and min player.
@@ -350,9 +360,9 @@ def playerTemplate(board, curOptimal, isOptimalSet, level,
 
     # Base case
     if terminal(board):
-        return (None, calcWeightedUtil(utility(board), level))
+        return (None, calcWeightedUtil(utility(board), level, isOpponent))
     
-    # Check cache
+    # CACHE
     # numberX, numberO = bitmaskBoard(board)
     # if level == 1:
     #     if (numberX, numberO) in cacheUtilBoard:
@@ -374,13 +384,13 @@ def playerTemplate(board, curOptimal, isOptimalSet, level,
     for action in allowedActions:
         newBoard = result(board, action, isMax)
         if optimalChoice == None:
-            _, newVal = opponentFunc(newBoard, -1, False, level + 1, utilBoard, startX, startY, True)
+            _, newVal = opponentFunc(newBoard, -1, False, level + 1, utilBoard, startX, startY, True, not isOpponent)
             optimalVal = newVal
             optimalChoice = action
 
         else:
             # Stop pruning to get the actual correct utility
-            _, newVal = opponentFunc(newBoard, optimalVal, True, level + 1, utilBoard, startX, startY, isPrunable)
+            _, newVal = opponentFunc(newBoard, optimalVal, True, level + 1, utilBoard, startX, startY, isPrunable, not isOpponent)
             if playerCompFunc(newVal, optimalVal):
                 optimalVal = newVal
                 optimalChoice = action
@@ -395,6 +405,7 @@ def playerTemplate(board, curOptimal, isOptimalSet, level,
         if (isPrunable and isOptimalSet and (optimalVal == curOptimal or playerCompFunc(optimalVal, curOptimal))):
             return (optimalChoice, optimalVal)
 
+    # CACHE
     # Add to cache
     # cacheNextMove[(numberX, numberO)] = (optimalChoice, optimalVal)
 
@@ -406,17 +417,19 @@ def playerTemplate(board, curOptimal, isOptimalSet, level,
     
     return (optimalChoice, optimalVal)
 
-def maxPlayer(board, curMin, isMinSet, level, utilBoard = None, startX = -1, startY = -1, isPrunable = False):
+def maxPlayer(board, curMin, isMinSet, level, 
+              utilBoard = None, startX = -1, startY = -1, isPrunable = False, 
+              isOpponent = True):
     return playerTemplate(board=board, curOptimal=curMin, isOptimalSet=isMinSet, level=level, 
-                   playerCompFunc=compareMax, opponentFunc=minPlayer, isMax=True, 
+                   playerCompFunc=compareMax, opponentFunc=minPlayer, isMax=True, isOpponent=isOpponent,
                    utilBoard=utilBoard, startX=startX, startY=startY, isPrunable=isPrunable)
     
-def minPlayer(board, curMax, isMaxSet, level, utilBoard = None, startX = -1, startY = -1, isPrunable = False):
+def minPlayer(board, curMax, isMaxSet, level, 
+              utilBoard = None, startX = -1, startY = -1, isPrunable = False, 
+              isOpponent = False):
     return playerTemplate(board=board, curOptimal=curMax, isOptimalSet=isMaxSet, level=level,
-                          playerCompFunc=compareMin, opponentFunc=maxPlayer, isMax=False,
+                          playerCompFunc=compareMin, opponentFunc=maxPlayer, isMax=False, isOpponent=isOpponent,
                           utilBoard=utilBoard, startX=startX, startY=startY, isPrunable=isPrunable)
-
-
 
 
 
@@ -441,13 +454,11 @@ def test():
             board = result(board, (x_loc, y_loc), True)
         
         printBoard(board)
-
-        stop = input("Stop?")
-        if stop == "Y":
-            break
     
     # with open("cacheNextMove.py", "w") as cacheNextFile:
     #     cacheNextFile.write("cacheNextMove = " + str(cacheNextMove))
     
     # with open("cacheUtilBoard.py", "w") as cachedUtilBoardFile:
     #     cachedUtilBoardFile.write("cacheUtilBoard = " + str(cacheUtilBoard))
+
+test()
