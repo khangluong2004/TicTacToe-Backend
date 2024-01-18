@@ -1,6 +1,8 @@
 import json
 from botLogic import minimax, unmaskBoard
 
+cache = {}
+
 def lambda_handler(event, context):
     # TODO implement
     # Check the authorizer
@@ -8,10 +10,18 @@ def lambda_handler(event, context):
     
     # Test echoing the input
     requestBody = json.loads(event["body"])
-
-    # Find the next optimal choice
-    receivedBoard = unmaskBoard(requestBody["numX"], requestBody["numO"])
-    nextMove = minimax(receivedBoard, requestBody["isX"])
+    numX = requestBody["numX"]
+    numO = requestBody["numO"]
+    isX = requestBody["isX"]
+    
+    receivedBoard = unmaskBoard(numX, numO)
+    
+    nextMove = (0, 0)
+    if ((numX, numO, isX) in cache):
+        nextMove = cache[(numX, numO, isX)]
+    else:
+        nextMove = minimax(receivedBoard, isX)
+        cache[(numX, numO, isX)] = nextMove
     
     return {
         'statusCode': 200,
