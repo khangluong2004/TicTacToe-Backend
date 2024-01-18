@@ -79,4 +79,4 @@ Can still cache as usual, but since it was fast enough with correct pruning appl
 
 ## botLogic performance
 
-With the new approach (pruning, and still no caching), the longest time taken to generate is 6-7 seconds (usually for the first move), with subsequent moves reducing to under 1 second. With caching, performance can be even higher.
+With the new approach (pruning, and still no caching), the longest time taken to generate is **6-7 seconds (from 37+ seconds)**, with subsequent moves reducing to under 1 second. With caching, performance can be even higher.
