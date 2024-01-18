@@ -213,9 +213,9 @@ def minimax(board, isX):
 
     choice = (-1, -1)
     if isX:
-        choice = boardMapper(board, maxPlayer, compareMax, minPlayer, compareMin)
+        choice = boardMapper(board, maxPlayer, compareMax, minPlayer)
     else:
-        choice = boardMapper(board, minPlayer, compareMin, maxPlayer, compareMax)
+        choice = boardMapper(board, minPlayer, compareMin, maxPlayer)
 
     return choice
 
@@ -253,7 +253,7 @@ def calcWeightedUtil(val, level, isOpponent):
 # cacheUtilBoard = {}
 
 
-def boardMapper(board, playerFunc, playerCompFunc, opponentFunc, opponentCompFunc):
+def boardMapper(board, playerFunc, playerCompFunc, opponentFunc):
     """
     Map 4 3x3 squares into 1 4x4 board, and pick out the best move
     """  
