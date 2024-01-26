@@ -460,5 +460,3 @@ def test():
     
     # with open("cacheUtilBoard.py", "w") as cachedUtilBoardFile:
     #     cachedUtilBoardFile.write("cacheUtilBoard = " + str(cacheUtilBoard))
-
-test()
