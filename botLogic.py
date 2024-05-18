@@ -460,3 +460,6 @@ def test():
     
     # with open("cacheUtilBoard.py", "w") as cachedUtilBoardFile:
     #     cachedUtilBoardFile.write("cacheUtilBoard = " + str(cacheUtilBoard))
+
+if __name__ == '__main__':
+    test()
